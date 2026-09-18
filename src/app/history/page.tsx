@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAdmin } from "@/lib/AdminContext";
 import { formatDate, formatMonthsRemark, formatWon } from "@/lib/format";
 import type { Deposit, Member, Withdrawal } from "@/lib/types";
 import { ColumnHeader, type SortState } from "@/components/table/ColumnHeader";
+import DepositCellModal from "@/components/DepositCellModal";
+import WithdrawalCellModal from "@/components/WithdrawalCellModal";
 
 type Row = {
   id: string;
@@ -15,6 +18,8 @@ type Row = {
   content: string;
   remark: string;
   receiptUrl?: string | null;
+  depositRecords?: Deposit[];
+  withdrawalRecord?: Withdrawal;
 };
 
 const rowCls = (idx: number) =>
@@ -30,6 +35,7 @@ const tdCls =
 const tdNumCls = tdCls + " text-right";
 
 export default function HistoryPage() {
+  const { isAdmin } = useAdmin();
   const [members, setMembers] = useState<Member[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
@@ -41,20 +47,36 @@ export default function HistoryPage() {
   const [kindFilter, setKindFilter] = useState<string[]>([]);
   const [contentFilter, setContentFilter] = useState<string[]>([]);
 
+  const [depositModal, setDepositModal] = useState<{
+    title: string;
+    deposits: Deposit[];
+  } | null>(null);
+  const [withdrawalModal, setWithdrawalModal] = useState<{
+    title: string;
+    withdrawals: Withdrawal[];
+  } | null>(null);
+
+  async function load() {
+    const [{ data: m }, { data: d }, { data: w }] = await Promise.all([
+      supabase.from("members").select("*"),
+      supabase.from("deposits").select("*"),
+      supabase.from("withdrawals").select("*"),
+    ]);
+    setMembers((m ?? []) as Member[]);
+    setDeposits((d ?? []) as Deposit[]);
+    setWithdrawals((w ?? []) as Withdrawal[]);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function load() {
-      const [{ data: m }, { data: d }, { data: w }] = await Promise.all([
-        supabase.from("members").select("*"),
-        supabase.from("deposits").select("*"),
-        supabase.from("withdrawals").select("*"),
-      ]);
-      setMembers((m ?? []) as Member[]);
-      setDeposits((d ?? []) as Deposit[]);
-      setWithdrawals((w ?? []) as Withdrawal[]);
-      setLoading(false);
-    }
     load();
   }, []);
+
+  function handleDataChanged() {
+    load();
+    setDepositModal(null);
+    setWithdrawalModal(null);
+  }
 
   const memberById = useMemo(() => {
     const map = new Map<string, Member>();
@@ -72,7 +94,14 @@ export default function HistoryPage() {
   const allRows = useMemo<Row[]>(() => {
     const groups = new Map<
       string,
-      { member_id: string | null; paid_date: string; type: string; amount: number; months: string[] }
+      {
+        member_id: string | null;
+        paid_date: string;
+        type: string;
+        amount: number;
+        months: string[];
+        records: Deposit[];
+      }
     >();
     for (const d of deposits) {
       // created_at is identical for every row inserted in the same submission
@@ -83,6 +112,7 @@ export default function HistoryPage() {
       if (g) {
         g.amount += d.amount;
         g.months.push(d.month);
+        g.records.push(d);
       } else {
         groups.set(key, {
           member_id: d.member_id,
@@ -90,6 +120,7 @@ export default function HistoryPage() {
           type: d.type,
           amount: d.amount,
           months: [d.month],
+          records: [d],
         });
       }
     }
@@ -109,6 +140,7 @@ export default function HistoryPage() {
         withdrawalAmount: null,
         content,
         remark: formatMonthsRemark(g.months),
+        depositRecords: g.records,
       };
     });
 
@@ -121,6 +153,7 @@ export default function HistoryPage() {
       content: w.content,
       remark: "",
       receiptUrl: w.receipt_image_url,
+      withdrawalRecord: w,
     }));
 
     return [...depositRows, ...withdrawalRows];
@@ -263,13 +296,18 @@ export default function HistoryPage() {
                     onSort={() => toggleSort("remark")}
                   />
                 </th>
+                {isAdmin && (
+                  <th className={thCls}>
+                    <span>관리</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={isAdmin ? 7 : 6}
                     className="px-2.5 py-6 text-center text-sm text-gray-400"
                   >
                     등록된 내역이 없습니다.
@@ -325,6 +363,30 @@ export default function HistoryPage() {
                   <td className={tdCls} title={r.remark}>
                     {r.remark || <span className="text-gray-300">-</span>}
                   </td>
+                  {isAdmin && (
+                    <td className={tdCls}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (r.kind === "입금" && r.depositRecords) {
+                            setDepositModal({
+                              title: `${r.content} · ${formatDate(r.date)} 입금내역`,
+                              deposits: r.depositRecords,
+                            });
+                          } else if (r.kind === "출금" && r.withdrawalRecord) {
+                            setWithdrawalModal({
+                              title: `${r.content} · ${formatDate(r.date)} 지출내역`,
+                              withdrawals: [r.withdrawalRecord],
+                            });
+                          }
+                        }}
+                        className="rounded-lg px-2 py-1 text-xs font-medium hover:bg-white"
+                        style={{ color: "#534AB7" }}
+                      >
+                        수정
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -344,6 +406,23 @@ export default function HistoryPage() {
             className="max-h-[85vh] max-w-full rounded-lg object-contain"
           />
         </div>
+      )}
+
+      {depositModal && (
+        <DepositCellModal
+          title={depositModal.title}
+          deposits={depositModal.deposits}
+          onClose={() => setDepositModal(null)}
+          onChanged={handleDataChanged}
+        />
+      )}
+      {withdrawalModal && (
+        <WithdrawalCellModal
+          title={withdrawalModal.title}
+          withdrawals={withdrawalModal.withdrawals}
+          onClose={() => setWithdrawalModal(null)}
+          onChanged={handleDataChanged}
+        />
       )}
     </div>
   );
