@@ -73,8 +73,15 @@ export default function DashboardPage() {
     const sumByMonth = (rows: { amount: number; month: string }[], m: string) =>
       rows.filter((r) => r.month === m).reduce((s, r) => s + r.amount, 0);
 
-    const curDep = sumByMonth(deposits, month);
-    const prevDep = sumByMonth(deposits, prevMonth);
+    // 입금합계는 회비가 적용되는 월(month)이 아니라 실제로 입금된 날짜(paid_date)
+    // 기준으로 집계한다 — 몇 달치를 한 번에 낸 경우에도 실제 들어온 금액이 반영되도록.
+    const sumDepositsByPaidMonth = (rows: Deposit[], m: string) =>
+      rows
+        .filter((r) => r.paid_date.slice(0, 7) === m)
+        .reduce((s, r) => s + r.amount, 0);
+
+    const curDep = sumDepositsByPaidMonth(deposits, month);
+    const prevDep = sumDepositsByPaidMonth(deposits, prevMonth);
     const curWd = sumByMonth(withdrawals, month);
     const prevWd = sumByMonth(withdrawals, prevMonth);
 
