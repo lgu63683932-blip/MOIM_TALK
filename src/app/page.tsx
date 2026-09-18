@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [balance, setBalance] = useState(0);
   const [monthDeposit, setMonthDeposit] = useState(0);
   const [monthWithdrawal, setMonthWithdrawal] = useState(0);
-  const [depositChange, setDepositChange] = useState<number | null>(null);
   const [withdrawalChange, setWithdrawalChange] = useState<number | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -81,13 +80,11 @@ export default function DashboardPage() {
         .reduce((s, r) => s + r.amount, 0);
 
     const curDep = sumDepositsByPaidMonth(deposits, month);
-    const prevDep = sumDepositsByPaidMonth(deposits, prevMonth);
     const curWd = sumByMonth(withdrawals, month);
     const prevWd = sumByMonth(withdrawals, prevMonth);
 
     setMonthDeposit(curDep);
     setMonthWithdrawal(curWd);
-    setDepositChange(percentChange(curDep, prevDep));
     setWithdrawalChange(percentChange(curWd, prevWd));
 
     setNotices((noticeData ?? []) as Notice[]);
@@ -179,12 +176,6 @@ export default function DashboardPage() {
           <p className="mt-2 text-2xl font-bold text-emerald-600">
             {formatWon(monthDeposit)}
           </p>
-          {depositChange !== null && (
-            <p className="mt-1 text-xs text-gray-400">
-              지난 달보다 {depositChange >= 0 ? "+" : ""}
-              {depositChange}%
-            </p>
-          )}
         </div>
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <p className="text-sm text-gray-400">이번 달 지출합계</p>
