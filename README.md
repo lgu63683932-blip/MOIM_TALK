@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 친구 모임계 입출금 관리
 
-## Getting Started
+친구들과 함께 운영하는 모임계(회비)의 입금·출금 내역을 등록하고, 잔액을 자동으로 계산해 공유하는 웹앱입니다.
 
-First, run the development server:
+## 기술 스택
+
+- Next.js (App Router)
+- Supabase (Database + Storage)
+- Vercel (배포)
+
+## 개발 환경 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` 에 아래 값이 필요합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 데이터베이스 스키마
 
-## Learn More
+`supabase/schema.sql` 을 Supabase SQL Editor에서 실행하면 필요한 테이블과 스토리지 버킷이 생성됩니다.
 
-To learn more about Next.js, take a look at the following resources:
+## 기획 문서
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+자세한 기능 정의는 [모임계_입출금관리_프로그램_기획서.md](./모임계_입출금관리_프로그램_기획서.md) 를 참고하세요.
