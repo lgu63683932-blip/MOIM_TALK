@@ -340,7 +340,7 @@ export default function DuesPage() {
                             {memberDeposits.length > 0
                               ? formatWon(amt)
                               : inactive
-                                ? "해당없음"
+                                ? "-"
                                 : "미납"}
                           </td>
                           <td
