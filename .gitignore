@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# personal financial source files (contain bank account numbers) — not for the repo
+md/*.xlsx
+md/~$*.xlsx
+
 # vercel
 .vercel
 
