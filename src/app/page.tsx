@@ -203,17 +203,17 @@ export default function DashboardPage() {
       <section className="grid gap-3 sm:grid-cols-2">
         <button
           onClick={() => requireAdmin(() => setShowDeposit(true))}
-          className="rounded-2xl bg-blue-600 px-5 py-4 text-left text-white shadow-sm hover:bg-blue-700"
+          className="rounded-2xl bg-blue-50 px-5 py-4 text-left text-blue-700 shadow-sm hover:bg-blue-100"
         >
           <div className="text-lg font-bold">+ 입금 등록</div>
-          <div className="text-sm text-blue-100">함께하는 돈을 추가해요</div>
+          <div className="text-sm text-blue-400">함께하는 돈을 추가해요</div>
         </button>
         <button
           onClick={() => requireAdmin(() => setShowWithdrawal(true))}
-          className="rounded-2xl bg-rose-500 px-5 py-4 text-left text-white shadow-sm hover:bg-rose-600"
+          className="rounded-2xl bg-rose-50 px-5 py-4 text-left text-rose-600 shadow-sm hover:bg-rose-100"
         >
           <div className="text-lg font-bold">- 출금 등록</div>
-          <div className="text-sm text-rose-100">지출 내역을 기록해요</div>
+          <div className="text-sm text-rose-300">지출 내역을 기록해요</div>
         </button>
       </section>
 
