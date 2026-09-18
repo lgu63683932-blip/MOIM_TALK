@@ -8,20 +8,23 @@ import type { Deposit, Member, Withdrawal } from "@/lib/types";
 import DepositCellModal from "@/components/DepositCellModal";
 import WithdrawalCellModal from "@/components/WithdrawalCellModal";
 
-function monthsForYear(year: number): string[] {
+function monthsForRange(startYear: number, endYear: number): string[] {
   const now = new Date();
   const curY = now.getFullYear();
   const curM = now.getMonth() + 1;
-  const maxMonth = year === curY ? curM : year < curY ? 12 : 0;
   const months: string[] = [];
-  for (let m = 1; m <= maxMonth; m++) {
-    months.push(`${year}-${String(m).padStart(2, "0")}`);
+  for (let year = startYear; year <= endYear; year++) {
+    const maxMonth = year === curY ? curM : year < curY ? 12 : 0;
+    for (let m = 1; m <= maxMonth; m++) {
+      months.push(`${year}-${String(m).padStart(2, "0")}`);
+    }
   }
   return months;
 }
 
 function monthShortLabel(month: string): string {
-  return `${Number(month.slice(5, 7))}월`;
+  const [y, m] = month.split("-");
+  return `${y}.${m}`;
 }
 
 type DepositModalState = { title: string; deposits: Deposit[] };
@@ -45,7 +48,8 @@ export default function DuesPage() {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [startYear, setStartYear] = useState(new Date().getFullYear());
+  const [endYear, setEndYear] = useState(new Date().getFullYear());
 
   const [depositModal, setDepositModal] = useState<DepositModalState | null>(
     null
@@ -75,10 +79,19 @@ export default function DuesPage() {
     set.add(new Date().getFullYear());
     deposits.forEach((d) => set.add(Number(d.month.slice(0, 4))));
     withdrawals.forEach((w) => set.add(Number(w.month.slice(0, 4))));
-    return Array.from(set).sort((a, b) => b - a);
+    return Array.from(set).sort((a, b) => a - b);
   }, [deposits, withdrawals]);
 
-  const months = useMemo(() => monthsForYear(year), [year]);
+  useEffect(() => {
+    if (years.length === 0) return;
+    setStartYear(years[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [years.length]);
+
+  const months = useMemo(
+    () => monthsForRange(Math.min(startYear, endYear), Math.max(startYear, endYear)),
+    [startYear, endYear]
+  );
 
   function depositsFor(month: string, memberId: string | null, type?: string) {
     return deposits.filter(
@@ -113,17 +126,31 @@ export default function DuesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">월별 회비 납부 현황</h1>
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
-        >
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={startYear}
+            onChange={(e) => setStartYear(Number(e.target.value))}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}년
+              </option>
+            ))}
+          </select>
+          <span className="text-gray-400">~</span>
+          <select
+            value={endYear}
+            onChange={(e) => setEndYear(Number(e.target.value))}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}년
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading && <p className="text-sm text-gray-400">불러오는 중...</p>}
@@ -133,7 +160,7 @@ export default function DuesPage() {
         </p>
       )}
       {!loading && members.length > 0 && months.length === 0 && (
-        <p className="text-sm text-gray-400">해당 연도에는 아직 데이터가 없습니다.</p>
+        <p className="text-sm text-gray-400">해당 기간에는 아직 데이터가 없습니다.</p>
       )}
 
       {!isAdmin && !loading && members.length > 0 && months.length > 0 && (
