@@ -233,7 +233,7 @@ export default function HistoryPage() {
       {loading && <p className="text-sm text-gray-400">불러오는 중...</p>}
 
       {!loading && (
-        <div className="rounded-xl border border-[#D0DDF3] overflow-auto">
+        <div className="max-h-[70vh] overflow-auto rounded-xl border border-[#D0DDF3]">
           <table
             className="border-separate w-full min-w-[720px]"
             style={{ borderSpacing: 0 }}

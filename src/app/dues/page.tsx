@@ -171,7 +171,7 @@ export default function DuesPage() {
 
       {!loading && members.length > 0 && months.length > 0 && (
         <div
-          className="rounded-xl border overflow-auto"
+          className="max-h-[70vh] overflow-auto rounded-xl border"
           style={{ borderColor: BORDER }}
         >
           <table
