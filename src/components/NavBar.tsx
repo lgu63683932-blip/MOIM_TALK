@@ -9,6 +9,7 @@ import AdminLoginModal from "@/components/AdminLoginModal";
 const NAV_ITEMS = [
   { href: "/", label: "대시보드" },
   { href: "/history", label: "내역보기" },
+  { href: "/dues", label: "회비 현황" },
   { href: "/friends", label: "친구 관리" },
   { href: "/settings", label: "설정" },
 ];
