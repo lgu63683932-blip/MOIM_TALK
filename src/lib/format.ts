@@ -30,6 +30,22 @@ export function percentChange(current: number, previous: number): number | null 
   return Math.round(((current - previous) / previous) * 100);
 }
 
+export function recentMonths(count: number): string[] {
+  const now = new Date();
+  const months: string[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return months;
+}
+
+export function monthChipLabel(month: string): string {
+  const [y, m] = month.split("-");
+  const curYear = new Date().getFullYear();
+  return Number(y) === curYear ? `${Number(m)}월` : `${y.slice(2)}.${m}`;
+}
+
 export function todayStr(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
