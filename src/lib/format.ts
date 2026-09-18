@@ -46,6 +46,20 @@ export function monthChipLabel(month: string): string {
   return Number(y) === curYear ? `${Number(m)}월` : `${y.slice(2)}.${m}`;
 }
 
+export function formatMonthsRemark(months: string[]): string {
+  const sorted = [...months].sort();
+  const byYear = new Map<string, number[]>();
+  for (const m of sorted) {
+    const [y, mm] = m.split("-");
+    const arr = byYear.get(y) ?? [];
+    arr.push(Number(mm));
+    byYear.set(y, arr);
+  }
+  return Array.from(byYear.entries())
+    .map(([y, ms]) => `${y}년${ms.map((n) => `${n}월`).join(",")}`)
+    .join(", ");
+}
+
 export function todayStr(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
