@@ -106,6 +106,33 @@ export default function DuesPage() {
     return withdrawals.filter((w) => w.month === month);
   }
 
+  function getMonthData(month: string) {
+    const monthWithdrawals = withdrawalsFor(month);
+    const depositTotal = deposits
+      .filter((d) => d.month === month)
+      .reduce((s, d) => s + d.amount, 0);
+    const withdrawalTotal = monthWithdrawals.reduce((s, w) => s + w.amount, 0);
+    const interestDeposits = depositsFor(month, null, "은행이자");
+    const interestTotal = interestDeposits.reduce((s, d) => s + d.amount, 0);
+    const memberRows = members.map((m) => {
+      const memberDeposits = depositsFor(month, m.id, "회비");
+      const amt = memberDeposits.reduce((s, d) => s + d.amount, 0);
+      const inactive =
+        memberDeposits.length === 0 &&
+        !!m.left_at &&
+        month > m.left_at.slice(0, 7);
+      return { member: m, memberDeposits, amt, inactive };
+    });
+    return {
+      monthWithdrawals,
+      depositTotal,
+      withdrawalTotal,
+      interestDeposits,
+      interestTotal,
+      memberRows,
+    };
+  }
+
   function balanceUpTo(month: string): number {
     const dep = deposits
       .filter((d) => d.month <= month)
@@ -171,7 +198,7 @@ export default function DuesPage() {
 
       {!loading && members.length > 0 && months.length > 0 && (
         <div
-          className="max-h-[70vh] overflow-auto rounded-xl border"
+          className="hidden max-h-[70vh] overflow-auto rounded-xl border sm:block"
           style={{ borderColor: BORDER }}
         >
           <table
@@ -182,7 +209,7 @@ export default function DuesPage() {
               <tr>
                 <th
                   rowSpan={2}
-                  className={`${thBase} left-0 text-left`}
+                  className={`${thBase} left-0 text-center`}
                   style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   월
@@ -225,14 +252,14 @@ export default function DuesPage() {
                 </th>
                 <th
                   rowSpan={2}
-                  className={`${thBase} text-right`}
+                  className={`${thBase} text-center`}
                   style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   지출합계
                 </th>
                 <th
                   rowSpan={2}
-                  className={`${thBase} text-right`}
+                  className={`${thBase} right-0 text-center border-r-0 border-l`}
                   style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   잔액
@@ -487,8 +514,8 @@ export default function DuesPage() {
                       {withdrawalTotal > 0 ? formatWon(withdrawalTotal) : "-"}
                     </td>
                     <td
-                      className={`${tdBase} text-right font-semibold text-blue-600 border-r-0`}
-                      style={{ borderColor: BORDER }}
+                      className={`${tdBase} right-0 sticky z-10 text-right font-semibold text-blue-600 border-r-0 border-l group-hover:bg-[#DCE8FA]`}
+                      style={{ borderColor: BORDER, backgroundColor: rowBgHex }}
                     >
                       {formatWon(balanceUpTo(month))}
                     </td>
@@ -497,6 +524,137 @@ export default function DuesPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && members.length > 0 && months.length > 0 && (
+        <div className="space-y-3 sm:hidden">
+          {[...months].reverse().map((month) => {
+            const {
+              monthWithdrawals,
+              depositTotal,
+              withdrawalTotal,
+              interestDeposits,
+              interestTotal,
+              memberRows,
+            } = getMonthData(month);
+            return (
+              <div
+                key={month}
+                className="rounded-2xl bg-white p-4 shadow-sm"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-bold text-gray-900">
+                    {monthShortLabel(month)}
+                  </span>
+                  <span className="font-semibold text-blue-600">
+                    잔액 {formatWon(balanceUpTo(month))}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                  {memberRows.map(({ member: m, memberDeposits, amt, inactive }) => {
+                    const clickable = isAdmin && !inactive;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        disabled={!clickable}
+                        onClick={
+                          clickable
+                            ? () =>
+                                setDepositModal({
+                                  title: `${m.name} · ${monthShortLabel(month)} 입금내역`,
+                                  deposits: memberDeposits,
+                                })
+                            : undefined
+                        }
+                        className="flex items-center justify-between rounded-lg px-2 py-1 text-left disabled:cursor-default"
+                      >
+                        <span className="text-gray-500">{m.name}</span>
+                        <span
+                          className={
+                            memberDeposits.length > 0
+                              ? "font-medium text-blue-600"
+                              : inactive
+                                ? "text-gray-300"
+                                : "text-rose-400"
+                          }
+                        >
+                          {memberDeposits.length > 0
+                            ? formatWon(amt)
+                            : inactive
+                              ? "-"
+                              : "미납"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!isAdmin}
+                  onClick={
+                    isAdmin
+                      ? () =>
+                          setDepositModal({
+                            title: `${monthShortLabel(month)} 은행이자`,
+                            deposits: interestDeposits,
+                          })
+                      : undefined
+                  }
+                  className="mt-2 flex w-full items-center justify-between rounded-lg border-t border-gray-100 px-2 pt-2 text-sm disabled:cursor-default"
+                >
+                  <span className="text-gray-400">은행이자</span>
+                  <span className="text-gray-600">
+                    {interestTotal > 0 ? formatWon(interestTotal) : "-"}
+                  </span>
+                </button>
+                <div className="flex items-center justify-between px-2 text-sm">
+                  <span className="text-gray-400">입금합계</span>
+                  <span className="font-semibold text-gray-800">
+                    {formatWon(depositTotal)}
+                  </span>
+                </div>
+
+                {monthWithdrawals.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={!isAdmin}
+                    onClick={
+                      isAdmin
+                        ? () =>
+                            setWithdrawalModal({
+                              title: `${monthShortLabel(month)} 지출내역`,
+                              withdrawals: monthWithdrawals,
+                            })
+                        : undefined
+                    }
+                    className="mt-2 w-full space-y-1 rounded-lg border-t border-gray-100 pt-2 text-left text-sm disabled:cursor-default"
+                  >
+                    {monthWithdrawals.map((w) => (
+                      <div
+                        key={w.id}
+                        className="flex items-center justify-between px-2"
+                      >
+                        <span className="text-gray-600">{w.content}</span>
+                        <span className="text-rose-500">
+                          -{formatWon(w.amount)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between px-2 font-medium">
+                      <span className="text-gray-400">지출합계</span>
+                      <span className="text-rose-500">
+                        {formatWon(withdrawalTotal)}
+                      </span>
+                    </div>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

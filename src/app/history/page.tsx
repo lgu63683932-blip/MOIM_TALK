@@ -233,7 +233,7 @@ export default function HistoryPage() {
       {loading && <p className="text-sm text-gray-400">불러오는 중...</p>}
 
       {!loading && (
-        <div className="max-h-[70vh] overflow-auto rounded-xl border border-[#D0DDF3]">
+        <div className="hidden max-h-[70vh] overflow-auto rounded-xl border border-[#D0DDF3] sm:block">
           <table
             className="border-separate w-full min-w-[720px]"
             style={{ borderSpacing: 0 }}
@@ -396,6 +396,82 @@ export default function HistoryPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && (
+        <div className="space-y-3 sm:hidden">
+          {sorted.length === 0 && (
+            <p className="py-6 text-center text-sm text-gray-400">
+              등록된 내역이 없습니다.
+            </p>
+          )}
+          {sorted.map((r) => (
+            <div key={r.id} className="rounded-2xl bg-white p-4 shadow-sm">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                    r.kind === "입금"
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-rose-100 text-rose-600"
+                  }`}
+                >
+                  {r.kind}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {formatDate(r.date)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
+                  {r.content}
+                </span>
+                <span
+                  className={`shrink-0 font-semibold ${
+                    r.kind === "입금" ? "text-blue-600" : "text-rose-500"
+                  }`}
+                >
+                  {r.kind === "입금"
+                    ? `+${formatWon(r.depositAmount ?? 0)}`
+                    : `-${formatWon(r.withdrawalAmount ?? 0)}`}
+                </span>
+              </div>
+              {r.remark && (
+                <p className="mt-1 text-xs text-gray-400">{r.remark}</p>
+              )}
+              {r.receiptUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={r.receiptUrl}
+                  alt="영수증"
+                  onClick={() => setLightbox(r.receiptUrl!)}
+                  className="mt-2 h-14 w-14 cursor-pointer rounded object-cover ring-1 ring-gray-200"
+                />
+              )}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (r.kind === "입금" && r.depositRecords) {
+                      setDepositModal({
+                        title: `${r.content} · ${formatDate(r.date)} 입금내역`,
+                        deposits: r.depositRecords,
+                      });
+                    } else if (r.kind === "출금" && r.withdrawalRecord) {
+                      setWithdrawalModal({
+                        title: `${r.content} · ${formatDate(r.date)} 지출내역`,
+                        withdrawals: [r.withdrawalRecord],
+                      });
+                    }
+                  }}
+                  className="mt-2 rounded-lg px-2 py-1 text-xs font-medium"
+                  style={{ color: "#534AB7" }}
+                >
+                  수정
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

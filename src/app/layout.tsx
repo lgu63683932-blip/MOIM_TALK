@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-slate-50">
         <AdminProvider>
           <NavBar />
-          <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
+          <main className="mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
             {children}
           </main>
         </AdminProvider>
