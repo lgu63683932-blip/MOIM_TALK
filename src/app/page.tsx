@@ -7,6 +7,7 @@ import { useAdmin } from "@/lib/AdminContext";
 import {
   currentMonth,
   formatDate,
+  formatMonthsRemark,
   formatWon,
   percentChange,
   previousMonth,
@@ -84,14 +85,41 @@ export default function DashboardPage() {
 
     setNotices((noticeData ?? []) as Notice[]);
 
-    const depositTx: Transaction[] = deposits.map((d) => ({
-      id: `d-${d.id}`,
-      kind: "입금",
-      date: d.paid_date,
-      label: d.member?.name ?? "알 수 없음",
-      sub: d.type,
-      amount: d.amount,
-    }));
+    const depositGroups = new Map<
+      string,
+      { date: string; label: string; type: string; amount: number; months: string[] }
+    >();
+    for (const d of deposits) {
+      // created_at is identical for every row inserted in the same submission,
+      // so a multi-month registration collapses into a single line here too.
+      const key = `${d.member_id ?? "null"}|${d.type}|${d.created_at}`;
+      const g = depositGroups.get(key);
+      if (g) {
+        g.amount += d.amount;
+        g.months.push(d.month);
+      } else {
+        depositGroups.set(key, {
+          date: d.paid_date,
+          label: d.member?.name ?? d.type,
+          type: d.type,
+          amount: d.amount,
+          months: [d.month],
+        });
+      }
+    }
+    const depositTx: Transaction[] = Array.from(depositGroups.entries()).map(
+      ([key, g]) => ({
+        id: `d-${key}`,
+        kind: "입금",
+        date: g.date,
+        label: g.label,
+        sub:
+          g.months.length > 1
+            ? `${g.type} · ${formatMonthsRemark(g.months)}`
+            : g.type,
+        amount: g.amount,
+      })
+    );
     const withdrawalTx: Transaction[] = withdrawals.map((w) => ({
       id: `w-${w.id}`,
       kind: "출금",
