@@ -276,7 +276,7 @@ export default function DuesPage() {
               </tr>
             </thead>
             <tbody>
-              {months.map((month, idx) => {
+              {[...months].reverse().map((month, idx) => {
                 const monthWithdrawals = withdrawalsFor(month);
                 const depositTotal = deposits
                   .filter((d) => d.month === month)
