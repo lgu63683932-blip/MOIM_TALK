@@ -296,6 +296,9 @@ export default function HistoryPage() {
                     onSort={() => toggleSort("remark")}
                   />
                 </th>
+                <th className={`${thCls} text-center`}>
+                  <span>영수증</span>
+                </th>
                 {isAdmin && (
                   <th className={thCls}>
                     <span>관리</span>
@@ -307,7 +310,7 @@ export default function HistoryPage() {
               {sorted.length === 0 && (
                 <tr>
                   <td
-                    colSpan={isAdmin ? 7 : 6}
+                    colSpan={isAdmin ? 8 : 7}
                     className="px-2.5 py-6 text-center text-sm text-gray-400"
                   >
                     등록된 내역이 없습니다.
@@ -347,21 +350,23 @@ export default function HistoryPage() {
                     )}
                   </td>
                   <td className={tdCls} title={r.content}>
-                    <span className="inline-flex items-center gap-1.5">
-                      {r.content}
-                      {r.receiptUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={r.receiptUrl}
-                          alt="영수증"
-                          onClick={() => setLightbox(r.receiptUrl!)}
-                          className="h-6 w-6 cursor-pointer rounded object-cover ring-1 ring-gray-200 hover:ring-blue-400"
-                        />
-                      )}
-                    </span>
+                    {r.content}
                   </td>
                   <td className={tdCls} title={r.remark}>
                     {r.remark || <span className="text-gray-300">-</span>}
+                  </td>
+                  <td className={`${tdCls} text-center`}>
+                    {r.receiptUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={r.receiptUrl}
+                        alt="영수증"
+                        onClick={() => setLightbox(r.receiptUrl!)}
+                        className="mx-auto h-8 w-8 cursor-pointer rounded object-cover ring-1 ring-gray-200 hover:ring-blue-400"
+                      />
+                    ) : (
+                      <span className="text-gray-300">-</span>
+                    )}
                   </td>
                   {isAdmin && (
                     <td className={tdCls}>
