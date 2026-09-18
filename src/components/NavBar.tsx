@@ -21,7 +21,7 @@ export default function NavBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10 xl:px-14">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-xl">🤝</span>
           <div className="leading-tight">
