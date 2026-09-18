@@ -8,6 +8,7 @@ create extension if not exists "pgcrypto";
 create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  left_at date, -- null이면 재적 중, 값이 있으면 그 달까지만 회비 대상
   created_at timestamptz not null default now()
 );
 

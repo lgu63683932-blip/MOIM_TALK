@@ -195,6 +195,11 @@ export default function DuesPage() {
                     style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                   >
                     {m.name}
+                    {m.left_at && (
+                      <span className="ml-1 font-normal text-gray-400">
+                        (탈퇴)
+                      </span>
+                    )}
                   </th>
                 ))}
                 <th
@@ -304,7 +309,11 @@ export default function DuesPage() {
                         (s, d) => s + d.amount,
                         0
                       );
-                      const clickable = isAdmin;
+                      const inactive =
+                        memberDeposits.length === 0 &&
+                        !!m.left_at &&
+                        month > m.left_at.slice(0, 7);
+                      const clickable = isAdmin && !inactive;
                       return (
                         <Fragment key={m.id}>
                           <td
@@ -322,13 +331,17 @@ export default function DuesPage() {
                             } ${
                               memberDeposits.length > 0
                                 ? "text-blue-600 font-medium"
-                                : "text-rose-400"
+                                : inactive
+                                  ? "text-gray-300"
+                                  : "text-rose-400"
                             }`}
                             style={{ borderColor: BORDER }}
                           >
                             {memberDeposits.length > 0
                               ? formatWon(amt)
-                              : "미납"}
+                              : inactive
+                                ? "해당없음"
+                                : "미납"}
                           </td>
                           <td
                             onClick={

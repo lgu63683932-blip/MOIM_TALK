@@ -1,6 +1,7 @@
 export type Member = {
   id: string;
   name: string;
+  left_at: string | null; // 탈퇴일 (YYYY-MM-DD), null이면 재적 중
   created_at: string;
 };
 

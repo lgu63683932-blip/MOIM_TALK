@@ -14,6 +14,7 @@ export default function FriendsPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingLeftAt, setEditingLeftAt] = useState("");
   const [error, setError] = useState("");
 
   async function load() {
@@ -48,7 +49,7 @@ export default function FriendsPage() {
     if (!editingName.trim()) return;
     const { error: updateError } = await supabase
       .from("members")
-      .update({ name: editingName.trim() })
+      .update({ name: editingName.trim(), left_at: editingLeftAt || null })
       .eq("id", id);
     if (updateError) {
       setError("수정에 실패했습니다: " + updateError.message);
@@ -102,7 +103,7 @@ export default function FriendsPage() {
           {members.map((m) => (
             <li key={m.id} className="flex items-center justify-between py-3">
               {editingId === m.id ? (
-                <div className="flex flex-1 items-center gap-2">
+                <div className="flex flex-1 flex-wrap items-center gap-2">
                   <input
                     type="text"
                     value={editingName}
@@ -110,6 +111,24 @@ export default function FriendsPage() {
                     className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
                     autoFocus
                   />
+                  <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                    <span className="text-xs">탈퇴일</span>
+                    <input
+                      type="date"
+                      value={editingLeftAt}
+                      onChange={(e) => setEditingLeftAt(e.target.value)}
+                      className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+                    />
+                    {editingLeftAt && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingLeftAt("")}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        재적으로 되돌리기
+                      </button>
+                    )}
+                  </div>
                   <button
                     onClick={() => handleUpdate(m.id)}
                     className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white"
@@ -126,7 +145,18 @@ export default function FriendsPage() {
               ) : (
                 <>
                   <div>
-                    <p className="font-medium text-gray-800">{m.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800">{m.name}</p>
+                      {m.left_at ? (
+                        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
+                          탈퇴 · {formatDate(m.left_at)}
+                        </span>
+                      ) : (
+                        <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-600">
+                          재적
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400">
                       등록일 {formatDate(m.created_at)}
                     </p>
@@ -137,6 +167,7 @@ export default function FriendsPage() {
                         onClick={() => {
                           setEditingId(m.id);
                           setEditingName(m.name);
+                          setEditingLeftAt(m.left_at ?? "");
                         }}
                         className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
                       >

@@ -29,7 +29,7 @@ export default function DepositModal({
   useEffect(() => {
     async function load() {
       const [{ data: memberData }, { data: settingData }] = await Promise.all([
-        supabase.from("members").select("*").order("name"),
+        supabase.from("members").select("*").is("left_at", null).order("name"),
         supabase
           .from("settings")
           .select("value")
