@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { formatWon } from "@/lib/format";
-import type { Deposit, Member } from "@/lib/types";
+import { useAdmin } from "@/lib/AdminContext";
+import { formatDate, formatWon } from "@/lib/format";
+import type { Deposit, Member, Withdrawal } from "@/lib/types";
+import DepositCellModal from "@/components/DepositCellModal";
+import WithdrawalCellModal from "@/components/WithdrawalCellModal";
 
 function monthsForYear(year: number): string[] {
   const now = new Date();
@@ -21,22 +24,37 @@ function monthShortLabel(month: string): string {
   return `${Number(month.slice(5, 7))}월`;
 }
 
+type DepositModalState = { title: string; deposits: Deposit[] };
+type WithdrawalModalState = { title: string; withdrawals: Withdrawal[] };
+
 export default function DuesPage() {
+  const { isAdmin } = useAdmin();
   const [members, setMembers] = useState<Member[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(new Date().getFullYear());
 
-  useEffect(() => {
-    async function load() {
-      const [{ data: memberData }, { data: depositData }] = await Promise.all([
+  const [depositModal, setDepositModal] = useState<DepositModalState | null>(
+    null
+  );
+  const [withdrawalModal, setWithdrawalModal] =
+    useState<WithdrawalModalState | null>(null);
+
+  async function load() {
+    const [{ data: memberData }, { data: depositData }, { data: withdrawalData }] =
+      await Promise.all([
         supabase.from("members").select("*").order("created_at"),
-        supabase.from("deposits").select("*").eq("type", "회비"),
+        supabase.from("deposits").select("*"),
+        supabase.from("withdrawals").select("*"),
       ]);
-      setMembers((memberData ?? []) as Member[]);
-      setDeposits((depositData ?? []) as Deposit[]);
-      setLoading(false);
-    }
+    setMembers((memberData ?? []) as Member[]);
+    setDeposits((depositData ?? []) as Deposit[]);
+    setWithdrawals((withdrawalData ?? []) as Withdrawal[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
     load();
   }, []);
 
@@ -44,29 +62,40 @@ export default function DuesPage() {
     const set = new Set<number>();
     set.add(new Date().getFullYear());
     deposits.forEach((d) => set.add(Number(d.month.slice(0, 4))));
+    withdrawals.forEach((w) => set.add(Number(w.month.slice(0, 4))));
     return Array.from(set).sort((a, b) => b - a);
-  }, [deposits]);
+  }, [deposits, withdrawals]);
 
   const months = useMemo(() => monthsForYear(year), [year]);
 
-  const table = useMemo(() => {
-    const map = new Map<string, Map<string, { amount: number; count: number }>>();
-    for (const m of members) map.set(m.id, new Map());
+  function depositsFor(month: string, memberId: string | null, type?: string) {
+    return deposits.filter(
+      (d) =>
+        d.month === month &&
+        d.member_id === memberId &&
+        (type ? d.type === type : true)
+    );
+  }
 
-    for (const d of deposits) {
-      if (!months.includes(d.month)) continue;
-      const memberMap = map.get(d.member_id);
-      if (!memberMap) continue;
-      const existing = memberMap.get(d.month);
-      if (existing) {
-        existing.amount += d.amount;
-        existing.count += 1;
-      } else {
-        memberMap.set(d.month, { amount: d.amount, count: 1 });
-      }
-    }
-    return map;
-  }, [members, deposits, months]);
+  function withdrawalsFor(month: string) {
+    return withdrawals.filter((w) => w.month === month);
+  }
+
+  function balanceUpTo(month: string): number {
+    const dep = deposits
+      .filter((d) => d.month <= month)
+      .reduce((s, d) => s + d.amount, 0);
+    const wd = withdrawals
+      .filter((w) => w.month <= month)
+      .reduce((s, w) => s + w.amount, 0);
+    return dep - wd;
+  }
+
+  function handleDataChanged() {
+    load();
+    setDepositModal(null);
+    setWithdrawalModal(null);
+  }
 
   return (
     <div className="space-y-6">
@@ -95,53 +124,293 @@ export default function DuesPage() {
         <p className="text-sm text-gray-400">해당 연도에는 아직 데이터가 없습니다.</p>
       )}
 
+      {!isAdmin && !loading && members.length > 0 && months.length > 0 && (
+        <p className="text-xs text-gray-400">
+          총무로 로그인하면 각 항목을 눌러 수정/삭제할 수 있습니다.
+        </p>
+      )}
+
       {!loading && members.length > 0 && months.length > 0 && (
         <div className="overflow-x-auto rounded-2xl bg-white p-5 shadow-sm">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[900px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-gray-400">
-                <th className="sticky left-0 bg-white py-2 pr-3 font-medium">
-                  이름
+              <tr className="text-gray-500">
+                <th
+                  rowSpan={2}
+                  className="sticky left-0 z-10 border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-left font-medium"
+                >
+                  월
                 </th>
-                {months.map((m) => (
-                  <th key={m} className="px-2 py-2 text-center font-medium">
-                    {monthShortLabel(m)}
+                {members.map((m) => (
+                  <th
+                    key={m.id}
+                    colSpan={2}
+                    className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  >
+                    {m.name}
                   </th>
                 ))}
+                <th
+                  rowSpan={2}
+                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                >
+                  은행이자
+                </th>
+                <th
+                  rowSpan={2}
+                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                >
+                  입금합계금액
+                </th>
+                <th
+                  colSpan={3}
+                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                >
+                  지출내용
+                </th>
+                <th
+                  rowSpan={2}
+                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                >
+                  지출합계
+                </th>
+                <th
+                  rowSpan={2}
+                  className="border-b border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                >
+                  잔액
+                </th>
+              </tr>
+              <tr className="text-gray-400">
+                {members.map((m) => (
+                  <Fragment key={m.id}>
+                    <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                      입금액
+                    </th>
+                    <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                      일자
+                    </th>
+                  </Fragment>
+                ))}
+                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                  내용
+                </th>
+                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                  일자
+                </th>
+                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                  금액
+                </th>
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => (
-                <tr key={member.id} className="border-b border-gray-50">
-                  <td className="sticky left-0 bg-white py-2 pr-3 font-medium text-gray-800">
-                    {member.name}
-                  </td>
-                  {months.map((m) => {
-                    const cell = table.get(member.id)?.get(m);
-                    return (
-                      <td key={m} className="px-2 py-2 text-center">
-                        {cell ? (
-                          <span className="inline-flex flex-col items-center rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
-                            {formatWon(cell.amount)}
-                            {cell.count > 1 && (
-                              <span className="text-[10px] text-blue-400">
-                                {cell.count}건
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="inline-block rounded-lg bg-rose-50 px-2 py-1 text-xs font-medium text-rose-400">
-                            미납
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {months.map((month) => {
+                const monthWithdrawals = withdrawalsFor(month);
+                const depositTotal = deposits
+                  .filter((d) => d.month === month)
+                  .reduce((s, d) => s + d.amount, 0);
+                const withdrawalTotal = monthWithdrawals.reduce(
+                  (s, w) => s + w.amount,
+                  0
+                );
+                const interestDeposits = depositsFor(month, null, "은행이자");
+                const interestTotal = interestDeposits.reduce(
+                  (s, d) => s + d.amount,
+                  0
+                );
+                return (
+                  <tr key={month} className="align-top">
+                    <td
+                      className="sticky left-0 z-10 border-b border-r border-gray-100 bg-white px-2 py-2 font-medium text-gray-800"
+                    >
+                      {monthShortLabel(month)}
+                    </td>
+                    {members.map((m) => {
+                      const memberDeposits = depositsFor(month, m.id, "회비");
+                      const amt = memberDeposits.reduce(
+                        (s, d) => s + d.amount,
+                        0
+                      );
+                      const clickable = isAdmin;
+                      return (
+                        <Fragment key={m.id}>
+                          <td
+                            onClick={
+                              clickable
+                                ? () =>
+                                    setDepositModal({
+                                      title: `${m.name} · ${monthShortLabel(month)} 입금내역`,
+                                      deposits: memberDeposits,
+                                    })
+                                : undefined
+                            }
+                            className={`border-b border-r border-gray-100 px-2 py-2 text-center ${
+                              clickable ? "cursor-pointer hover:bg-blue-50" : ""
+                            } ${
+                              memberDeposits.length > 0
+                                ? "text-blue-600 font-medium"
+                                : "text-rose-400"
+                            }`}
+                          >
+                            {memberDeposits.length > 0
+                              ? formatWon(amt)
+                              : "미납"}
+                          </td>
+                          <td
+                            onClick={
+                              clickable
+                                ? () =>
+                                    setDepositModal({
+                                      title: `${m.name} · ${monthShortLabel(month)} 입금내역`,
+                                      deposits: memberDeposits,
+                                    })
+                                : undefined
+                            }
+                            className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-500 ${
+                              clickable ? "cursor-pointer hover:bg-blue-50" : ""
+                            }`}
+                          >
+                            {memberDeposits.length === 1
+                              ? formatDate(memberDeposits[0].paid_date)
+                              : memberDeposits.length > 1
+                                ? `${memberDeposits.length}건`
+                                : "-"}
+                          </td>
+                        </Fragment>
+                      );
+                    })}
+                    <td
+                      onClick={
+                        isAdmin
+                          ? () =>
+                              setDepositModal({
+                                title: `${monthShortLabel(month)} 은행이자`,
+                                deposits: interestDeposits,
+                              })
+                          : undefined
+                      }
+                      className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-600 ${
+                        isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                      }`}
+                    >
+                      {interestTotal > 0 ? formatWon(interestTotal) : "-"}
+                    </td>
+                    <td
+                      className="border-b border-r border-gray-100 px-2 py-2 text-center font-semibold text-gray-800"
+                    >
+                      {formatWon(depositTotal)}
+                    </td>
+
+                    {monthWithdrawals.length === 0 ? (
+                      <>
+                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                          -
+                        </td>
+                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                          -
+                        </td>
+                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                          -
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td
+                          onClick={
+                            isAdmin
+                              ? () =>
+                                  setWithdrawalModal({
+                                    title: `${monthShortLabel(month)} 지출내역`,
+                                    withdrawals: monthWithdrawals,
+                                  })
+                              : undefined
+                          }
+                          className={`border-b border-r border-gray-100 px-2 py-2 text-gray-700 ${
+                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          }`}
+                        >
+                          {monthWithdrawals.map((w) => (
+                            <div key={w.id} className="whitespace-nowrap">
+                              {w.content}
+                            </div>
+                          ))}
+                        </td>
+                        <td
+                          onClick={
+                            isAdmin
+                              ? () =>
+                                  setWithdrawalModal({
+                                    title: `${monthShortLabel(month)} 지출내역`,
+                                    withdrawals: monthWithdrawals,
+                                  })
+                              : undefined
+                          }
+                          className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-500 ${
+                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          }`}
+                        >
+                          {monthWithdrawals.map((w) => (
+                            <div key={w.id} className="whitespace-nowrap">
+                              {formatDate(w.spent_date)}
+                            </div>
+                          ))}
+                        </td>
+                        <td
+                          onClick={
+                            isAdmin
+                              ? () =>
+                                  setWithdrawalModal({
+                                    title: `${monthShortLabel(month)} 지출내역`,
+                                    withdrawals: monthWithdrawals,
+                                  })
+                              : undefined
+                          }
+                          className={`border-b border-r border-gray-100 px-2 py-2 text-right text-rose-500 ${
+                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          }`}
+                        >
+                          {monthWithdrawals.map((w) => (
+                            <div key={w.id} className="whitespace-nowrap">
+                              {formatWon(w.amount)}
+                            </div>
+                          ))}
+                        </td>
+                      </>
+                    )}
+
+                    <td
+                      className="border-b border-r border-gray-100 px-2 py-2 text-center font-semibold text-rose-500"
+                    >
+                      {withdrawalTotal > 0 ? formatWon(withdrawalTotal) : "-"}
+                    </td>
+                    <td
+                      className="border-b border-gray-100 px-2 py-2 text-center font-semibold text-blue-600"
+                    >
+                      {formatWon(balanceUpTo(month))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+      )}
+
+      {depositModal && (
+        <DepositCellModal
+          title={depositModal.title}
+          deposits={depositModal.deposits}
+          onClose={() => setDepositModal(null)}
+          onChanged={handleDataChanged}
+        />
+      )}
+      {withdrawalModal && (
+        <WithdrawalCellModal
+          title={withdrawalModal.title}
+          withdrawals={withdrawalModal.withdrawals}
+          onClose={() => setWithdrawalModal(null)}
+          onChanged={handleDataChanged}
+        />
       )}
     </div>
   );

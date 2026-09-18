@@ -8,7 +8,7 @@ export type DepositType = "회비" | "은행이자" | "기타";
 
 export type Deposit = {
   id: string;
-  member_id: string;
+  member_id: string | null;
   amount: number;
   paid_date: string; // YYYY-MM-DD
   type: DepositType;

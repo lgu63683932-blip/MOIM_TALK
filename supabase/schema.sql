@@ -14,7 +14,7 @@ create table if not exists members (
 -- 2) 입금내역
 create table if not exists deposits (
   id uuid primary key default gen_random_uuid(),
-  member_id uuid not null references members(id) on delete cascade,
+  member_id uuid references members(id) on delete cascade, -- null 허용: 은행이자 등 특정 친구에게 속하지 않는 입금
   amount integer not null,
   paid_date date not null,
   type text not null default '회비', -- 회비 / 은행이자 등

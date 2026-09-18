@@ -60,9 +60,11 @@ export default function DepositModal({
     });
   }
 
+  const requiresMember = type === "회비";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selected.size === 0) {
+    if (requiresMember && selected.size === 0) {
       setError("입금자를 한 명 이상 선택해주세요.");
       return;
     }
@@ -73,15 +75,31 @@ export default function DepositModal({
     setSaving(true);
     setError("");
 
-    const rows = Array.from(selected).flatMap((member_id) =>
-      Array.from(selectedMonths).map((month) => ({
-        member_id,
-        amount,
-        paid_date: date,
-        type,
-        month,
-      }))
-    );
+    type DepositRow = {
+      member_id: string | null;
+      amount: number;
+      paid_date: string;
+      type: DepositType;
+      month: string;
+    };
+
+    const rows: DepositRow[] = requiresMember
+      ? Array.from(selected).flatMap((member_id) =>
+          Array.from(selectedMonths).map((month) => ({
+            member_id,
+            amount,
+            paid_date: date,
+            type,
+            month,
+          }))
+        )
+      : Array.from(selectedMonths).map((month) => ({
+          member_id: null,
+          amount,
+          paid_date: date,
+          type,
+          month,
+        }));
 
     const { error: insertError } = await supabase.from("deposits").insert(rows);
     setSaving(false);
@@ -99,62 +117,63 @@ export default function DepositModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
-            입금자 선택
+            구분
           </label>
-          {members.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              등록된 친구가 없습니다. 친구 관리에서 먼저 등록해주세요.
-            </p>
-          ) : (
-            <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-gray-200 p-2">
-              {members.map((m) => (
-                <label
-                  key={m.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
-                    selected.has(m.id)
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(m.id)}
-                    onChange={() => toggle(m.id)}
-                    className="h-4 w-4"
-                  />
-                  {m.name}
-                </label>
-              ))}
-            </div>
-          )}
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as DepositType)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="회비">회비 (친구별로 등록)</option>
+            <option value="은행이자">은행이자 (전체 공통)</option>
+            <option value="기타">기타 (전체 공통)</option>
+          </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {requiresMember && (
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              금액 (1인당)
+              입금자 선택
             </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-            />
+            {members.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                등록된 친구가 없습니다. 친구 관리에서 먼저 등록해주세요.
+              </p>
+            ) : (
+              <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-gray-200 p-2">
+                {members.map((m) => (
+                  <label
+                    key={m.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
+                      selected.has(m.id)
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(m.id)}
+                      onChange={() => toggle(m.id)}
+                      className="h-4 w-4"
+                    />
+                    {m.name}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              구분
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as DepositType)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-            >
-              <option value="회비">회비</option>
-              <option value="은행이자">은행이자</option>
-              <option value="기타">기타</option>
-            </select>
-          </div>
+        )}
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            금액{requiresMember ? " (1인당)" : ""}
+          </label>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+          />
         </div>
 
         <div>
@@ -203,7 +222,9 @@ export default function DepositModal({
         >
           {saving
             ? "저장 중..."
-            : `${selected.size || 0}명 × ${selectedMonths.size || 0}개월 입금 등록`}
+            : requiresMember
+              ? `${selected.size || 0}명 × ${selectedMonths.size || 0}개월 입금 등록`
+              : `${selectedMonths.size || 0}개월 ${type} 등록`}
         </button>
       </form>
     </Modal>
