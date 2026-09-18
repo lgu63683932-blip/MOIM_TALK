@@ -27,6 +27,18 @@ function monthShortLabel(month: string): string {
 type DepositModalState = { title: string; deposits: Deposit[] };
 type WithdrawalModalState = { title: string; withdrawals: Withdrawal[] };
 
+// table-design-spec.md 토큰
+const HEADER_BG = "#E3ECFB";
+const HEADER_TEXT = "#334155";
+const BORDER = "#D0DDF3";
+
+const thBase = `px-2.5 py-1.5 text-[14px] font-semibold whitespace-nowrap sticky top-0 z-20 border-b border-r`;
+const thSub = `px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap sticky top-[33px] z-20 border-b border-r`;
+const tdBase = `px-2.5 py-1.5 text-[14px] whitespace-nowrap border-b border-r`;
+
+const zebraRow = (idx: number) =>
+  idx % 2 === 0 ? "bg-white" : "bg-[#F5F8FF]";
+
 export default function DuesPage() {
   const { isAdmin } = useAdmin();
   const [members, setMembers] = useState<Member[]>([]);
@@ -131,13 +143,20 @@ export default function DuesPage() {
       )}
 
       {!loading && members.length > 0 && months.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl bg-white p-5 shadow-sm">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
+        <div
+          className="rounded-xl border overflow-auto"
+          style={{ borderColor: BORDER }}
+        >
+          <table
+            className="w-full min-w-[900px] border-separate"
+            style={{ borderSpacing: 0 }}
+          >
             <thead>
-              <tr className="text-gray-500">
+              <tr>
                 <th
                   rowSpan={2}
-                  className="sticky left-0 z-10 border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-left font-medium"
+                  className={`${thBase} left-0 text-left`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   월
                 </th>
@@ -145,66 +164,87 @@ export default function DuesPage() {
                   <th
                     key={m.id}
                     colSpan={2}
-                    className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                    className={`${thBase} text-center`}
+                    style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                   >
                     {m.name}
                   </th>
                 ))}
                 <th
                   rowSpan={2}
-                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  className={`${thBase} text-right`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   은행이자
                 </th>
                 <th
                   rowSpan={2}
-                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  className={`${thBase} text-right`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   입금합계금액
                 </th>
                 <th
                   colSpan={3}
-                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  className={`${thBase} text-center`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   지출내용
                 </th>
                 <th
                   rowSpan={2}
-                  className="border-b border-r border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  className={`${thBase} text-right`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   지출합계
                 </th>
                 <th
                   rowSpan={2}
-                  className="border-b border-gray-200 bg-gray-50 px-2 py-2 text-center font-medium"
+                  className={`${thBase} text-right`}
+                  style={{ backgroundColor: HEADER_BG, color: HEADER_TEXT, borderColor: BORDER }}
                 >
                   잔액
                 </th>
               </tr>
-              <tr className="text-gray-400">
+              <tr>
                 {members.map((m) => (
                   <Fragment key={m.id}>
-                    <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                    <th
+                      className={`${thSub} text-right`}
+                      style={{ backgroundColor: HEADER_BG, color: "#64748b", borderColor: BORDER }}
+                    >
                       입금액
                     </th>
-                    <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                    <th
+                      className={`${thSub} text-center`}
+                      style={{ backgroundColor: HEADER_BG, color: "#64748b", borderColor: BORDER }}
+                    >
                       일자
                     </th>
                   </Fragment>
                 ))}
-                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                <th
+                  className={`${thSub} text-center`}
+                  style={{ backgroundColor: HEADER_BG, color: "#64748b", borderColor: BORDER }}
+                >
                   내용
                 </th>
-                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                <th
+                  className={`${thSub} text-center`}
+                  style={{ backgroundColor: HEADER_BG, color: "#64748b", borderColor: BORDER }}
+                >
                   일자
                 </th>
-                <th className="border-b border-r border-gray-200 bg-gray-50 px-2 py-1.5 text-center text-xs font-medium">
+                <th
+                  className={`${thSub} text-right`}
+                  style={{ backgroundColor: HEADER_BG, color: "#64748b", borderColor: BORDER }}
+                >
                   금액
                 </th>
               </tr>
             </thead>
             <tbody>
-              {months.map((month) => {
+              {months.map((month, idx) => {
                 const monthWithdrawals = withdrawalsFor(month);
                 const depositTotal = deposits
                   .filter((d) => d.month === month)
@@ -218,10 +258,16 @@ export default function DuesPage() {
                   (s, d) => s + d.amount,
                   0
                 );
+                const rowBg = zebraRow(idx);
+                const rowBgHex = idx % 2 === 0 ? "#FFFFFF" : "#F5F8FF";
                 return (
-                  <tr key={month} className="align-top">
+                  <tr
+                    key={month}
+                    className={`group align-top ${rowBg} hover:bg-[#DCE8FA] transition-colors`}
+                  >
                     <td
-                      className="sticky left-0 z-10 border-b border-r border-gray-100 bg-white px-2 py-2 font-medium text-gray-800"
+                      className={`${tdBase} left-0 sticky z-10 font-medium text-gray-800 group-hover:bg-[#DCE8FA]`}
+                      style={{ backgroundColor: rowBgHex, borderColor: BORDER }}
                     >
                       {monthShortLabel(month)}
                     </td>
@@ -244,13 +290,14 @@ export default function DuesPage() {
                                     })
                                 : undefined
                             }
-                            className={`border-b border-r border-gray-100 px-2 py-2 text-center ${
-                              clickable ? "cursor-pointer hover:bg-blue-50" : ""
+                            className={`${tdBase} text-right ${
+                              clickable ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                             } ${
                               memberDeposits.length > 0
                                 ? "text-blue-600 font-medium"
                                 : "text-rose-400"
                             }`}
+                            style={{ borderColor: BORDER }}
                           >
                             {memberDeposits.length > 0
                               ? formatWon(amt)
@@ -266,9 +313,10 @@ export default function DuesPage() {
                                     })
                                 : undefined
                             }
-                            className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-500 ${
-                              clickable ? "cursor-pointer hover:bg-blue-50" : ""
+                            className={`${tdBase} text-center text-gray-500 ${
+                              clickable ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                             }`}
+                            style={{ borderColor: BORDER }}
                           >
                             {memberDeposits.length === 1
                               ? formatDate(memberDeposits[0].paid_date)
@@ -289,27 +337,38 @@ export default function DuesPage() {
                               })
                           : undefined
                       }
-                      className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-600 ${
-                        isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                      className={`${tdBase} text-right text-gray-600 ${
+                        isAdmin ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                       }`}
+                      style={{ borderColor: BORDER }}
                     >
                       {interestTotal > 0 ? formatWon(interestTotal) : "-"}
                     </td>
                     <td
-                      className="border-b border-r border-gray-100 px-2 py-2 text-center font-semibold text-gray-800"
+                      className={`${tdBase} text-right font-semibold text-gray-800`}
+                      style={{ borderColor: BORDER }}
                     >
                       {formatWon(depositTotal)}
                     </td>
 
                     {monthWithdrawals.length === 0 ? (
                       <>
-                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                        <td
+                          className={`${tdBase} text-center text-gray-300`}
+                          style={{ borderColor: BORDER }}
+                        >
                           -
                         </td>
-                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                        <td
+                          className={`${tdBase} text-center text-gray-300`}
+                          style={{ borderColor: BORDER }}
+                        >
                           -
                         </td>
-                        <td className="border-b border-r border-gray-100 px-2 py-2 text-center text-gray-300">
+                        <td
+                          className={`${tdBase} text-right text-gray-300`}
+                          style={{ borderColor: BORDER }}
+                        >
                           -
                         </td>
                       </>
@@ -325,9 +384,10 @@ export default function DuesPage() {
                                   })
                               : undefined
                           }
-                          className={`border-b border-r border-gray-100 px-2 py-2 text-gray-700 ${
-                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          className={`${tdBase} text-gray-700 ${
+                            isAdmin ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                           }`}
+                          style={{ borderColor: BORDER }}
                         >
                           {monthWithdrawals.map((w) => (
                             <div key={w.id} className="whitespace-nowrap">
@@ -345,9 +405,10 @@ export default function DuesPage() {
                                   })
                               : undefined
                           }
-                          className={`border-b border-r border-gray-100 px-2 py-2 text-center text-gray-500 ${
-                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          className={`${tdBase} text-center text-gray-500 ${
+                            isAdmin ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                           }`}
+                          style={{ borderColor: BORDER }}
                         >
                           {monthWithdrawals.map((w) => (
                             <div key={w.id} className="whitespace-nowrap">
@@ -365,9 +426,10 @@ export default function DuesPage() {
                                   })
                               : undefined
                           }
-                          className={`border-b border-r border-gray-100 px-2 py-2 text-right text-rose-500 ${
-                            isAdmin ? "cursor-pointer hover:bg-blue-50" : ""
+                          className={`${tdBase} text-right text-rose-500 ${
+                            isAdmin ? "cursor-pointer hover:bg-[#DCE8FA]" : ""
                           }`}
+                          style={{ borderColor: BORDER }}
                         >
                           {monthWithdrawals.map((w) => (
                             <div key={w.id} className="whitespace-nowrap">
@@ -379,12 +441,14 @@ export default function DuesPage() {
                     )}
 
                     <td
-                      className="border-b border-r border-gray-100 px-2 py-2 text-center font-semibold text-rose-500"
+                      className={`${tdBase} text-right font-semibold text-rose-500`}
+                      style={{ borderColor: BORDER }}
                     >
                       {withdrawalTotal > 0 ? formatWon(withdrawalTotal) : "-"}
                     </td>
                     <td
-                      className="border-b border-gray-100 px-2 py-2 text-center font-semibold text-blue-600"
+                      className={`${tdBase} text-right font-semibold text-blue-600 border-r-0`}
+                      style={{ borderColor: BORDER }}
                     >
                       {formatWon(balanceUpTo(month))}
                     </td>
