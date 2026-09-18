@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Users } from "lucide-react";
 import { useAdmin } from "@/lib/AdminContext";
 import AdminLoginModal from "@/components/AdminLoginModal";
 
@@ -22,7 +23,10 @@ export default function NavBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10 xl:px-14">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <Users size={18} strokeWidth={2.25} />
+          </span>
           <div className="leading-tight">
             <div className="text-sm font-bold text-gray-900">
               친구 모임계

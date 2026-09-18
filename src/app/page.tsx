@@ -2,6 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  BarChart3,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  Megaphone,
+  Minus,
+  Plus,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAdmin } from "@/lib/AdminContext";
 import {
@@ -155,63 +166,95 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-8 text-white">
-        <h1 className="text-2xl font-bold">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-8 text-white">
+        <div className="pointer-events-none absolute -right-6 -top-10 h-40 w-40 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute right-16 bottom-[-2.5rem] h-24 w-24 rounded-full bg-white/10" />
+        <h1 className="relative text-2xl font-bold">
           안녕하세요! 👋
         </h1>
-        <p className="mt-1 text-blue-100">
+        <p className="relative mt-1 text-blue-100">
           오늘도 좋은 하루 보내세요. 친구들과 함께하는 소중한 돈, 더 의미 있게.
         </p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-400">현재 잔액</p>
-          <p className="mt-2 text-3xl font-bold text-blue-600">
-            {formatWon(balance)}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-400">이번 달 입금합계</p>
-          <p className="mt-2 text-2xl font-bold text-emerald-600">
-            {formatWon(monthDeposit)}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-400">이번 달 지출합계</p>
-          <p className="mt-2 text-2xl font-bold text-rose-500">
-            {formatWon(monthWithdrawal)}
-          </p>
-          {withdrawalChange !== null && (
-            <p className="mt-1 text-xs text-gray-400">
-              지난 달보다 {withdrawalChange >= 0 ? "+" : ""}
-              {withdrawalChange}%
+        <div className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <Wallet size={20} />
+          </span>
+          <div>
+            <p className="text-sm text-gray-400">현재 잔액</p>
+            <p className="mt-1 text-2xl font-bold text-blue-600">
+              {formatWon(balance)}
             </p>
-          )}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <TrendingUp size={20} />
+          </span>
+          <div>
+            <p className="text-sm text-gray-400">이번 달 입금합계</p>
+            <p className="mt-1 text-xl font-bold text-emerald-600">
+              {formatWon(monthDeposit)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-500">
+            <BarChart3 size={20} />
+          </span>
+          <div>
+            <p className="text-sm text-gray-400">이번 달 지출합계</p>
+            <p className="mt-1 text-xl font-bold text-rose-500">
+              {formatWon(monthWithdrawal)}
+            </p>
+            {withdrawalChange !== null && (
+              <p className="text-xs text-gray-400">
+                지난 달보다 {withdrawalChange >= 0 ? "+" : ""}
+                {withdrawalChange}%
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
         <button
           onClick={() => requireAdmin(() => setShowDeposit(true))}
-          className="rounded-2xl bg-blue-50 px-5 py-4 text-left text-blue-700 shadow-sm hover:bg-blue-100"
+          className="flex items-center gap-3 rounded-2xl bg-blue-50 px-5 py-4 text-left text-blue-700 shadow-sm hover:bg-blue-100"
         >
-          <div className="text-lg font-bold">+ 입금 등록</div>
-          <div className="text-sm text-blue-400">함께하는 돈을 추가해요</div>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+            <Plus size={20} strokeWidth={2.5} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-bold">입금 등록</div>
+            <div className="text-sm text-blue-400">함께하는 돈을 추가해요</div>
+          </div>
+          <ChevronRight size={20} className="shrink-0 text-blue-300" />
         </button>
         <button
           onClick={() => requireAdmin(() => setShowWithdrawal(true))}
-          className="rounded-2xl bg-rose-50 px-5 py-4 text-left text-rose-600 shadow-sm hover:bg-rose-100"
+          className="flex items-center gap-3 rounded-2xl bg-rose-50 px-5 py-4 text-left text-rose-600 shadow-sm hover:bg-rose-100"
         >
-          <div className="text-lg font-bold">- 출금 등록</div>
-          <div className="text-sm text-rose-300">지출 내역을 기록해요</div>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+            <Minus size={20} strokeWidth={2.5} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-bold">출금 등록</div>
+            <div className="text-sm text-rose-300">지출 내역을 기록해요</div>
+          </div>
+          <ChevronRight size={20} className="shrink-0 text-rose-300" />
         </button>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">📢 공지사항</h2>
+            <h2 className="flex items-center gap-1.5 font-bold text-gray-900">
+              <Megaphone size={18} className="text-gray-400" />
+              공지사항
+            </h2>
             <button
               onClick={() => setShowNotice(true)}
               className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200"
@@ -221,8 +264,13 @@ export default function DashboardPage() {
           </div>
           <ul className="divide-y divide-gray-100">
             {notices.length === 0 && (
-              <li className="py-3 text-sm text-gray-400">
-                등록된 공지사항이 없습니다.
+              <li className="flex flex-col items-center gap-2 py-8 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-300">
+                  <FileText size={22} />
+                </span>
+                <span className="text-sm text-gray-400">
+                  등록된 공지사항이 없습니다.
+                </span>
               </li>
             )}
             {notices.map((n) => (
@@ -255,7 +303,10 @@ export default function DashboardPage() {
 
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">📋 최근 내역</h2>
+            <h2 className="flex items-center gap-1.5 font-bold text-gray-900">
+              <ClipboardList size={18} className="text-gray-400" />
+              최근 내역
+            </h2>
             <Link
               href="/history"
               className="text-xs font-medium text-blue-600 hover:underline"
